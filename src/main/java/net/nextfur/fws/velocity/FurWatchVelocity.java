@@ -25,8 +25,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 @Plugin(id = "furwatch", name = "FurWatch", version = "1.0", description = "Plugin Oficial NextFur", authors = {
-        "Niix-Dan",
-        "DiogoNSPI06"
+        "NextFur"
 })
 public class FurWatchVelocity {
     private final ProxyServer server;

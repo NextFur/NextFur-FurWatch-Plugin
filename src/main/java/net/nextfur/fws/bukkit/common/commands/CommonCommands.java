@@ -16,6 +16,9 @@ public class CommonCommands implements CommandExecutor {
 
         plugin.getCommand("banitem").setExecutor(this);
         plugin.getCommand("furwatch").setExecutor(this);
+        plugin.getCommand("sudo").setExecutor(this);
+        plugin.getCommand("fakejoin").setExecutor(this);
+        plugin.getCommand("fakeleave").setExecutor(this);
     }
 
     @Override
@@ -31,6 +34,18 @@ public class CommonCommands implements CommandExecutor {
 
         if (s.equalsIgnoreCase("furwatch") && commandSender.hasPermission(command.getPermission())) {
             FurWatchCommand.execute(this, (Player) commandSender, s, strings);
+        }
+
+        if (s.equalsIgnoreCase("sudo") && commandSender.hasPermission(command.getPermission())) {
+            SudoCommand.execute(this, (Player) commandSender, s, strings);
+        }
+
+        if (s.equalsIgnoreCase("fakejoin") && commandSender.hasPermission(command.getPermission())) {
+            FakeJoinCommand.execute(this, (Player) commandSender, s, strings);
+        }
+
+        if (s.equalsIgnoreCase("fakeleave") && commandSender.hasPermission(command.getPermission())) {
+            FakeLeaveCommand.execute(this, (Player) commandSender, s, strings);
         }
 
         return true;
