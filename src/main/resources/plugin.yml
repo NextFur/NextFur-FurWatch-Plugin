@@ -1,0 +1,19 @@
+name: FurWatch
+version: '1.0'
+main: net.nextfur.fws.bukkit.FurWatchBukkit
+api-version: '1.21'
+load: STARTUP
+authors: [ KivixEletric, Diogo06221, Niix-Dan ]
+website: https://fursmp.com/
+commands:
+  setspawn:
+    permission: "furwatch.admin"
+  banitem:
+    permission: "furwatch.admin"
+  furwatch:
+    permission: "furwatch.admin"
+
+permissions:
+  furwatch.admin:
+    default: op
+    description: "Libera acesso aos comandos do furwatch"

@@ -1,0 +1,23 @@
+
+#
+#  Este servidor está definido como lobby
+#
+
+# Dados para autenticação staff no furguard
+FurGuard:
+  ApiKey: ""
+  ApiUrl: "https://api.nextfur.net/"
+
+Messages:
+  BannedItem: "§cOpa! Um item banido foi removido do seu inventário. §5[ x%amount% %item% ]"
+
+# Configs do lobby
+Lobby:
+  SpawnPos: ""
+  Disable-Hunger: true
+  Disable-Damage: true
+  Spawn-On-Join: true
+
+
+Config-Version: 1.0
+Server-Role: "lobby"

@@ -22,3 +22,92 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+
+# ======================================
+# GERAL
+# ======================================
+
+old/*
+old/
+
+**/*.log
+**/*.swp
+**/*.class
+**/*.DS_Store
+**/*.iml
+**/*BACKUP*
+
+# IDEs
+**/.idea/
+**/*.sublime*
+**/.vscode/
+**/.vscode-test/
+
+# ======================================
+# GRADLE
+# ======================================
+**/.gradle/
+**/build/
+**/out/
+
+# Caches
+**/.classpath
+**/.project
+**/.settings/
+
+# ======================================
+# NPM/Yarn
+# ======================================
+**/node_modules/
+**/yarn.lock
+**/package-lock.json
+**/.pnp.*
+**/.pnp
+
+# ======================================
+# Minecraft Específico
+# ======================================
+**/debug/
+**/runs/
+**/logs/
+**/crash-reports/
+**/config/
+**/saves/
+**/mods/
+**/dist/
+*.launch
+*.nb-gradle/
+*.vscode/
+**/run/
+**/run2/
+**/eclipse/
+
+# ======================================
+# IntelliJ / Eclipse / NetBeans
+# ======================================
+**/*.iws
+**/*.ipr
+**/*.idea/
+**/*.launch
+**/*.settings/
+**/*.metadata/
+**/bin/
+
+# ======================================
+# Testes temporários e artefatos
+# ======================================
+**/*.tmp
+**/*.bak
+**/*.orig
+**/*.rej
+**/*.patch
+
+# ======================================
+# Arquivos do sistema operacional
+# ======================================
+**/Thumbs.db
+**/ehthumbs.db
+**/Desktop.ini
+**/$RECYCLE.BIN/
+**/*.stackdump
