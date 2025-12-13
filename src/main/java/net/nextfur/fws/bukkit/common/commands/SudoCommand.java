@@ -1,6 +1,5 @@
 package net.nextfur.fws.bukkit.common.commands;
 
-import net.nextfur.fws.bukkit.FurWatchBukkit;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;

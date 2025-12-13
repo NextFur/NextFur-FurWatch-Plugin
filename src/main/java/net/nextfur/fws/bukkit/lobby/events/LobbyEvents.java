@@ -3,11 +3,13 @@ package net.nextfur.fws.bukkit.lobby.events;
 import dev.dejvokep.boostedyaml.YamlDocument;
 import net.nextfur.fws.bukkit.FurWatchBukkit;
 import net.nextfur.fws.bukkit.utils.PositionParser;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -49,6 +51,20 @@ public class LobbyEvents implements Listener {
             }
         } else {
             event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onBreak(BlockBreakEvent event) {
+        if (event.getPlayer() != null) {
+            Player player = event.getPlayer();
+
+            boolean isAdmin = player.isOp() || player.hasPermission("furwatch.admin");
+
+            if (!isAdmin) {
+                event.setCancelled(true);
+                player.sendMessage(ChatColor.RED + "Opa! Você não pode construir aqui!");
+            }
         }
     }
 }
