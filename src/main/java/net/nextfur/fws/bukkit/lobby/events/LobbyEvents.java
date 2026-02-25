@@ -27,8 +27,10 @@ public class LobbyEvents implements Listener {
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerJoin(PlayerJoinEvent event) {
         if (config.getBoolean("Lobby.Spawn-On-Join", false) && !config.getString("Lobby.SpawnPos", null).isEmpty()) {
-            Location spawnPos = PositionParser.deserialize(config.getString("Lobby.SpawnPos"));
-            event.getPlayer().teleport(spawnPos);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                Location spawnPos = PositionParser.deserialize(config.getString("Lobby.SpawnPos"));
+                event.getPlayer().teleport(spawnPos);
+            }, 10L);
         }
     }
 
