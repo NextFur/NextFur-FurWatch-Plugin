@@ -20,6 +20,19 @@ DeathTracker:
   Messages:
     Death-Alert: "&8[&6FurWatch&8] &c%player% &7morreu! Causa: &f%death_message% &7| Mortes totais: &e%death_count% &7| Local: &f%world% &8(&f%x%&7, &f%y%&7, &f%z%&8)"
 
+# Módulo de ações canônicas de roleplay (/acao, /action)
+RoleplayAction:
+  Enabled: true
+  Radius: 15.0
+  Duration-Seconds: 4
+  Cooldown-Seconds: 2
+  Custom-Format: "&e* &6%player% &f%action% &e*"
+  Messages:
+    No-One-Nearby: "&7(Ninguém por perto viu sua ação)"
+    Usage: "&cUso: /acao <ação|preset> [alvo] &7- Digite &e/acao lista &7para ver presets."
+    Cooldown: "&cAguarde %seconds%s para usar outra ação."
+    Disabled: "&cO sistema de ações de roleplay está desativado."
+
 # ;3
 Config-Version: 1.0
 Server-Role: "generic"

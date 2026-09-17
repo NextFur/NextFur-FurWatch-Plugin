@@ -22,8 +22,21 @@ commands:
     permission: "furwatch.admin"
     description: "Gerencia e visualiza as estatísticas de mortes dos jogadores"
     aliases: [deaths, deathstats]
+  acao:
+    description: "Executa uma ação canônica de roleplay visível para jogadores próximos"
+    aliases: [action]
+    usage: "/<command> <preset|ação personalizada> [alvo]"
 
 permissions:
   furwatch.admin:
     default: op
     description: "Libera acesso aos comandos do furwatch"
+  furwatch.action:
+    default: true
+    description: "Permite usar comandos de ação de roleplay /acao e /action"
+  furwatch.action.color:
+    default: op
+    description: "Permite usar cores em ações de roleplay personalizadas"
+  furwatch.action.bypass:
+    default: op
+    description: "Permite ignorar o cooldown de ações de roleplay"

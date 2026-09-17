@@ -15,6 +15,7 @@ import net.nextfur.fws.bukkit.generic.commands.GenericCommands;
 import net.nextfur.fws.bukkit.generic.events.GenericEvents;
 import net.nextfur.fws.bukkit.lobby.commands.LobbyCommands;
 import net.nextfur.fws.bukkit.lobby.events.LobbyEvents;
+import net.nextfur.fws.bukkit.modules.action.ActionManager;
 import net.nextfur.fws.bukkit.modules.death.DeathManager;
 import net.nextfur.fws.bukkit.utils.Logger;
 import org.bukkit.Bukkit;
@@ -36,6 +37,7 @@ public class FurWatchBukkit extends JavaPlugin {
     private final List<String> bannedItems = new ArrayList<>();
     private NextFurAPI api;
     private DeathManager deathManager;
+    private ActionManager actionManager;
 
     @Override
     public void onEnable() {
@@ -103,6 +105,9 @@ public class FurWatchBukkit extends JavaPlugin {
 
             this.deathManager = new DeathManager(this, this.config);
             this.deathManager.initialize();
+
+            this.actionManager = new ActionManager(this, this.config);
+            this.actionManager.initialize();
 
             LOGGER.info("Plugin carregado com sucesso!");
 
@@ -198,9 +203,16 @@ public class FurWatchBukkit extends JavaPlugin {
         if (this.deathManager != null) {
             this.deathManager.shutdown();
         }
+        if (this.actionManager != null) {
+            this.actionManager.shutdown();
+        }
     }
 
     public DeathManager getDeathManager() {
         return this.deathManager;
+    }
+
+    public ActionManager getActionManager() {
+        return this.actionManager;
     }
 }
