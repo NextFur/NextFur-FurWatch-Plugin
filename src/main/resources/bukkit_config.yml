@@ -11,6 +11,15 @@ FurGuard:
 Messages:
   BannedItem: "§cOpa! Um item banido foi removido do seu inventário. §5[ x%amount% %item% ]"
 
+# Módulo de rastreamento e anúncio de mortes
+DeathTracker:
+  Enabled: true
+  Notify-Ops: true
+  Permission: "furwatch.admin"
+  Log-To-Console: true
+  Messages:
+    Death-Alert: "&8[&6FurWatch&8] &c%player% &7morreu! Causa: &f%death_message% &7| Mortes totais: &e%death_count% &7| Local: &f%world% &8(&f%x%&7, &f%y%&7, &f%z%&8)"
+
 # ;3
 Config-Version: 1.0
 Server-Role: "generic"

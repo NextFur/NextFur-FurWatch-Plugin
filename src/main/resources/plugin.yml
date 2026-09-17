@@ -18,6 +18,10 @@ commands:
     permission: "furwatch.admin"
   fakeleave:
     permission: "furwatch.admin"
+  deathcount:
+    permission: "furwatch.admin"
+    description: "Gerencia e visualiza as estatísticas de mortes dos jogadores"
+    aliases: [deaths, deathstats]
 
 permissions:
   furwatch.admin:

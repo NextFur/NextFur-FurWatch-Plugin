@@ -15,6 +15,7 @@ import net.nextfur.fws.bukkit.generic.commands.GenericCommands;
 import net.nextfur.fws.bukkit.generic.events.GenericEvents;
 import net.nextfur.fws.bukkit.lobby.commands.LobbyCommands;
 import net.nextfur.fws.bukkit.lobby.events.LobbyEvents;
+import net.nextfur.fws.bukkit.modules.death.DeathManager;
 import net.nextfur.fws.bukkit.utils.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -34,6 +35,7 @@ public class FurWatchBukkit extends JavaPlugin {
 
     private final List<String> bannedItems = new ArrayList<>();
     private NextFurAPI api;
+    private DeathManager deathManager;
 
     @Override
     public void onEnable() {
@@ -98,6 +100,9 @@ public class FurWatchBukkit extends JavaPlugin {
                 new GenericCommands(this, this.config);
                 getServer().getPluginManager().registerEvents(new GenericEvents(this, config), this);
             }
+
+            this.deathManager = new DeathManager(this, this.config);
+            this.deathManager.initialize();
 
             LOGGER.info("Plugin carregado com sucesso!");
 
@@ -186,5 +191,16 @@ public class FurWatchBukkit extends JavaPlugin {
 
     public Logger _getLogger() {
         return this.LOGGER;
+    }
+
+    @Override
+    public void onDisable() {
+        if (this.deathManager != null) {
+            this.deathManager.shutdown();
+        }
+    }
+
+    public DeathManager getDeathManager() {
+        return this.deathManager;
     }
 }
