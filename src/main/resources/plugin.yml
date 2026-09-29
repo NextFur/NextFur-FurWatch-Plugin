@@ -26,11 +26,21 @@ commands:
     description: "Executa uma ação canônica de roleplay visível para jogadores próximos"
     aliases: [action]
     usage: "/<command> <preset|ação personalizada> [alvo]"
+  guard:
+    description: "Gerencia barreiras dinâmicas cubóides e regiões protegidas"
+    aliases: [furguard, guardregion]
+    usage: "/<command> [subcomando]"
 
 permissions:
   furwatch.admin:
     default: op
     description: "Libera acesso aos comandos do furwatch"
+  furwatch.guard.command:
+    default: op
+    description: "Permite usar os comandos do /guard"
+  furwatch.guard.bypass:
+    default: op
+    description: "Permite ignorar todas as barreiras do módulo Guard"
   furwatch.action:
     default: true
     description: "Permite usar comandos de ação de roleplay /acao e /action"

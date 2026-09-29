@@ -40,5 +40,20 @@ RoleplayAction:
     Cooldown: "&cAguarde %seconds%s para usar outra ação."
     Disabled: "&cO sistema de ações de roleplay está desativado."
 
+# Módulo de barreiras dinâmicas e proteção de áreas (/guard)
+Guard:
+  Enabled: true
+  Repulsion-Force: 0.35
+  Notification-Type: "ACTION_BAR" # ACTION_BAR ou CHAT
+  Particle-Effects: true
+  Sound-Effects: true
+  Messages:
+    Blacklist-Entry: "&8[&6FurWatch&8] &cVocê não pode entrar nesta região restrita!"
+    Whitelist-Exit: "&8[&6FurWatch&8] &cVocê não pode sair desta área protegida!"
+    Block-Break: "&8[&6FurWatch&8] &cVocê não tem permissão para quebrar blocos aqui!"
+    Block-Place: "&8[&6FurWatch&8] &cVocê não tem permissão para colocar blocos aqui!"
+    Interact: "&8[&6FurWatch&8] &cVocê não tem permissão para interagir aqui!"
+    PvP: "&8[&6FurWatch&8] &cO combate entre jogadores está desativado nesta região!"
+
 Config-Version: 1.0
 Server-Role: "lobby"

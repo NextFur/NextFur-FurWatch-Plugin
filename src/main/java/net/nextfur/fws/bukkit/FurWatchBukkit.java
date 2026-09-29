@@ -17,6 +17,9 @@ import net.nextfur.fws.bukkit.lobby.commands.LobbyCommands;
 import net.nextfur.fws.bukkit.lobby.events.LobbyEvents;
 import net.nextfur.fws.bukkit.modules.action.ActionManager;
 import net.nextfur.fws.bukkit.modules.death.DeathManager;
+import net.nextfur.fws.bukkit.modules.guard.GuardCommand;
+import net.nextfur.fws.bukkit.modules.guard.GuardListener;
+import net.nextfur.fws.bukkit.modules.guard.GuardManager;
 import net.nextfur.fws.bukkit.utils.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -38,6 +41,7 @@ public class FurWatchBukkit extends JavaPlugin {
     private NextFurAPI api;
     private DeathManager deathManager;
     private ActionManager actionManager;
+    private GuardManager guardManager;
 
     @Override
     public void onEnable() {
@@ -108,6 +112,21 @@ public class FurWatchBukkit extends JavaPlugin {
 
             this.actionManager = new ActionManager(this, this.config);
             this.actionManager.initialize();
+
+            this.guardManager = new GuardManager(this, this.config);
+            this.guardManager.initialize();
+
+            if (this.guardManager.isEnabled()) {
+                GuardCommand guardCommand = new GuardCommand(this, this.guardManager);
+                var cmdGuard = getCommand("guard");
+                if (cmdGuard != null) {
+                    cmdGuard.setExecutor(guardCommand);
+                    cmdGuard.setTabCompleter(guardCommand);
+                } else {
+                    LOGGER.warn("Comando 'guard' não encontrado no plugin.yml!");
+                }
+                getServer().getPluginManager().registerEvents(new GuardListener(this, this.guardManager), this);
+            }
 
             LOGGER.info("Plugin carregado com sucesso!");
 
@@ -206,6 +225,9 @@ public class FurWatchBukkit extends JavaPlugin {
         if (this.actionManager != null) {
             this.actionManager.shutdown();
         }
+        if (this.guardManager != null) {
+            this.guardManager.shutdown();
+        }
     }
 
     public DeathManager getDeathManager() {
@@ -214,5 +236,9 @@ public class FurWatchBukkit extends JavaPlugin {
 
     public ActionManager getActionManager() {
         return this.actionManager;
+    }
+
+    public GuardManager getGuardManager() {
+        return this.guardManager;
     }
 }
