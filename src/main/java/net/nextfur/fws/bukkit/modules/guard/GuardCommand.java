@@ -1,8 +1,10 @@
 package net.nextfur.fws.bukkit.modules.guard;
 
 import net.nextfur.fws.bukkit.FurWatchBukkit;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -63,6 +65,10 @@ public class GuardCommand implements CommandExecutor, TabCompleter {
             case "region":
             case "type":
                 handleType(sender, args);
+                break;
+            case "members":
+            case "member":
+                handleMembers(sender, args);
                 break;
             case "delete":
             case "remove":
@@ -256,6 +262,300 @@ public class GuardCommand implements CommandExecutor, TabCompleter {
                 + "' foi alterado para: " + type.getFormattedName());
     }
 
+    private void handleMembers(CommandSender sender, String[] args) {
+        if (args.length < 2 || args[1].equalsIgnoreCase("help")) {
+            sendMembersHelp(sender);
+            return;
+        }
+
+        Set<String> actionKeywords = new HashSet<>(Arrays.asList("add", "remove", "list", "clear", "reset", "check", "has"));
+        String regionName;
+        String action;
+        String targetArg = null;
+
+        if (actionKeywords.contains(args[1].toLowerCase(Locale.ROOT))) {
+            // Sintaxe alternativa/flexível: /guard members <action> <nome> [jogador]
+            action = args[1].toLowerCase(Locale.ROOT);
+            if (args.length < 3) {
+                sender.sendMessage(ChatColor.RED + "Uso correto: /guard members " + action + " <região>"
+                        + (action.equals("list") || action.equals("clear") || action.equals("reset") ? "" : " <jogador|@a>"));
+                return;
+            }
+            regionName = args[2].trim().toLowerCase(Locale.ROOT);
+            if (args.length >= 4) {
+                targetArg = args[3].trim();
+            }
+        } else {
+            // Sintaxe padrão: /guard members <nome> <action> [jogador]
+            regionName = args[1].trim().toLowerCase(Locale.ROOT);
+            if (args.length == 2) {
+                action = "list";
+            } else {
+                action = args[2].toLowerCase(Locale.ROOT);
+                if (args.length >= 4) {
+                    targetArg = args[3].trim();
+                }
+            }
+        }
+
+        GuardRegion region = guardManager.getRegion(regionName);
+        if (region == null) {
+            sender.sendMessage(ChatColor.RED + "Região '" + regionName + "' não encontrada.");
+            return;
+        }
+
+        switch (action) {
+            case "list":
+                handleMembersList(sender, region);
+                break;
+            case "add":
+                handleMembersAdd(sender, region, targetArg);
+                break;
+            case "remove":
+                handleMembersRemove(sender, region, targetArg);
+                break;
+            case "clear":
+            case "reset":
+                handleMembersClear(sender, region);
+                break;
+            case "check":
+            case "has":
+                handleMembersCheck(sender, region, targetArg);
+                break;
+            default:
+                sender.sendMessage(ChatColor.RED + "Ação desconhecida '" + action + "'. Opções disponíveis: list, add, remove, clear, check.");
+                break;
+        }
+    }
+
+    private void handleMembersList(CommandSender sender, GuardRegion region) {
+        Set<UUID> members = region.getMembers();
+        if (members.isEmpty()) {
+            sender.sendMessage(ChatColor.YELLOW + "A região '" + region.getName() + "' não possui nenhum membro cadastrado.");
+            return;
+        }
+
+        sender.sendMessage(ChatColor.GOLD + "=== [ Membros da Região: " + region.getName() + " (" + members.size() + ") ] ===");
+        List<String> formatted = new ArrayList<>();
+        for (UUID uuid : members) {
+            String name = region.getMemberNames().get(uuid);
+            Player online = Bukkit.getPlayer(uuid);
+            if (online != null) {
+                name = online.getName();
+                formatted.add(ChatColor.GREEN + name + ChatColor.DARK_GRAY + " (Online)");
+            } else {
+                if (name == null && Bukkit.getServer() != null) {
+                    //noinspection deprecation
+                    OfflinePlayer off = Bukkit.getOfflinePlayer(uuid);
+                    if (off.getName() != null) name = off.getName();
+                }
+                if (name == null) name = uuid.toString().substring(0, 8);
+                formatted.add(ChatColor.GRAY + name + ChatColor.DARK_GRAY + " (Offline)");
+            }
+        }
+
+        if (formatted.size() <= 15) {
+            for (String line : formatted) {
+                sender.sendMessage(ChatColor.DARK_GRAY + " • " + line);
+            }
+        } else {
+            sender.sendMessage(ChatColor.GRAY + String.join(ChatColor.DARK_GRAY + ", " + ChatColor.GRAY, formatted));
+        }
+    }
+
+    private void handleMembersAdd(CommandSender sender, GuardRegion region, String targetArg) {
+        if (targetArg == null || targetArg.isEmpty()) {
+            sender.sendMessage(ChatColor.RED + "Uso correto: /guard members " + region.getName() + " add <jogador|@a>");
+            return;
+        }
+
+        if (targetArg.equalsIgnoreCase("@a")) {
+            Collection<? extends Player> onlinePlayers = Bukkit.getOnlinePlayers();
+            if (onlinePlayers.isEmpty()) {
+                sender.sendMessage(ChatColor.RED + "Não há nenhum jogador online no servidor no momento.");
+                return;
+            }
+
+            int addedCount = 0;
+            for (Player p : onlinePlayers) {
+                if (region.addMember(p.getUniqueId(), p.getName())) {
+                    addedCount++;
+                }
+            }
+
+            guardManager.saveData(true);
+            sender.sendMessage(ChatColor.GOLD + "[FurGuard] " + ChatColor.GREEN + "Foram adicionados " + ChatColor.YELLOW + addedCount
+                    + ChatColor.GREEN + " jogador(es) online à região '" + ChatColor.YELLOW + region.getName() + ChatColor.GREEN + "'!"
+                    + ChatColor.GRAY + " (Total online: " + onlinePlayers.size() + ")");
+            return;
+        }
+
+        Player online = Bukkit.getPlayerExact(targetArg);
+        UUID uuid;
+        String name;
+
+        if (online != null) {
+            uuid = online.getUniqueId();
+            name = online.getName();
+        } else {
+            //noinspection deprecation
+            OfflinePlayer off = Bukkit.getOfflinePlayer(targetArg);
+            uuid = off.getUniqueId();
+            name = off.getName() != null ? off.getName() : targetArg;
+        }
+
+        if (region.isMember(uuid)) {
+            sender.sendMessage(ChatColor.YELLOW + "O jogador '" + name + "' já possui acesso à região '" + region.getName() + "'.");
+            return;
+        }
+
+        region.addMember(uuid, name);
+        guardManager.saveData(true);
+        sender.sendMessage(ChatColor.GOLD + "[FurGuard] " + ChatColor.GREEN + "Jogador " + ChatColor.YELLOW + name
+                + ChatColor.GREEN + " adicionado aos membros da região '" + ChatColor.YELLOW + region.getName() + ChatColor.GREEN + "' com sucesso!");
+    }
+
+    private void handleMembersRemove(CommandSender sender, GuardRegion region, String targetArg) {
+        if (targetArg == null || targetArg.isEmpty()) {
+            sender.sendMessage(ChatColor.RED + "Uso correto: /guard members " + region.getName() + " remove <jogador|@a>");
+            return;
+        }
+
+        if (targetArg.equalsIgnoreCase("@a")) {
+            Collection<? extends Player> onlinePlayers = Bukkit.getOnlinePlayers();
+            if (onlinePlayers.isEmpty()) {
+                sender.sendMessage(ChatColor.RED + "Não há nenhum jogador online no servidor no momento.");
+                return;
+            }
+
+            int removedCount = 0;
+            for (Player p : onlinePlayers) {
+                if (region.removeMember(p.getUniqueId())) {
+                    removedCount++;
+                }
+            }
+
+            if (removedCount > 0) {
+                guardManager.saveData(true);
+                sender.sendMessage(ChatColor.GOLD + "[FurGuard] " + ChatColor.GREEN + "Foram removidos " + ChatColor.YELLOW + removedCount
+                        + ChatColor.GREEN + " jogador(es) online da região '" + ChatColor.YELLOW + region.getName() + ChatColor.GREEN + "'!");
+            } else {
+                sender.sendMessage(ChatColor.YELLOW + "Nenhum dos jogadores online atualmente era membro da região '" + region.getName() + "'.");
+            }
+            return;
+        }
+
+        // Tenta resolver por nome no cache de membros
+        UUID targetUuid = null;
+        String targetName = targetArg;
+
+        for (Map.Entry<UUID, String> entry : region.getMemberNames().entrySet()) {
+            if (entry.getValue().equalsIgnoreCase(targetArg)) {
+                targetUuid = entry.getKey();
+                targetName = entry.getValue();
+                break;
+            }
+        }
+
+        if (targetUuid == null) {
+            Player online = Bukkit.getPlayerExact(targetArg);
+            if (online != null && region.isMember(online.getUniqueId())) {
+                targetUuid = online.getUniqueId();
+                targetName = online.getName();
+            }
+        }
+
+        if (targetUuid == null) {
+            //noinspection deprecation
+            OfflinePlayer off = Bukkit.getOfflinePlayer(targetArg);
+            if (off != null && region.isMember(off.getUniqueId())) {
+                targetUuid = off.getUniqueId();
+                if (off.getName() != null) targetName = off.getName();
+            }
+        }
+
+        if (targetUuid == null) {
+            try {
+                UUID parsed = UUID.fromString(targetArg);
+                if (region.isMember(parsed)) {
+                    targetUuid = parsed;
+                }
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        if (targetUuid == null || !region.isMember(targetUuid)) {
+            sender.sendMessage(ChatColor.RED + "O jogador '" + targetArg + "' não é membro da região '" + region.getName() + "'.");
+            return;
+        }
+
+        region.removeMember(targetUuid);
+        guardManager.saveData(true);
+        sender.sendMessage(ChatColor.GOLD + "[FurGuard] " + ChatColor.GREEN + "Jogador " + ChatColor.YELLOW + targetName
+                + ChatColor.GREEN + " removido dos membros da região '" + ChatColor.YELLOW + region.getName() + ChatColor.GREEN + "' com sucesso!");
+    }
+
+    private void handleMembersClear(CommandSender sender, GuardRegion region) {
+        int total = region.getMembers().size();
+        if (total == 0) {
+            sender.sendMessage(ChatColor.YELLOW + "A região '" + region.getName() + "' não possui nenhum membro cadastrado.");
+            return;
+        }
+
+        region.clearMembers();
+        guardManager.saveData(true);
+        sender.sendMessage(ChatColor.GOLD + "[FurGuard] " + ChatColor.GREEN + "Todos os " + ChatColor.YELLOW + total
+                + ChatColor.GREEN + " membros da região '" + ChatColor.YELLOW + region.getName() + ChatColor.GREEN + "' foram removidos com sucesso!");
+    }
+
+    private void handleMembersCheck(CommandSender sender, GuardRegion region, String targetArg) {
+        if (targetArg == null || targetArg.isEmpty()) {
+            sender.sendMessage(ChatColor.RED + "Uso correto: /guard members " + region.getName() + " check <jogador>");
+            return;
+        }
+
+        Player online = Bukkit.getPlayerExact(targetArg);
+        boolean isMember = false;
+        String targetName = targetArg;
+
+        if (online != null) {
+            isMember = region.isMember(online.getUniqueId()) || region.isMember(online.getName());
+            targetName = online.getName();
+        } else {
+            for (Map.Entry<UUID, String> entry : region.getMemberNames().entrySet()) {
+                if (entry.getValue().equalsIgnoreCase(targetArg)) {
+                    isMember = true;
+                    targetName = entry.getValue();
+                    break;
+                }
+            }
+            if (!isMember) {
+                //noinspection deprecation
+                OfflinePlayer off = Bukkit.getOfflinePlayer(targetArg);
+                if (off != null && region.isMember(off.getUniqueId())) {
+                    isMember = true;
+                    if (off.getName() != null) targetName = off.getName();
+                }
+            }
+        }
+
+        if (isMember) {
+            sender.sendMessage(ChatColor.GOLD + "[FurGuard] " + ChatColor.GREEN + "O jogador " + ChatColor.YELLOW + targetName
+                    + ChatColor.GREEN + " POSSUI acesso à região '" + ChatColor.YELLOW + region.getName() + ChatColor.GREEN + "'.");
+        } else {
+            sender.sendMessage(ChatColor.GOLD + "[FurGuard] " + ChatColor.RED + "O jogador " + ChatColor.YELLOW + targetName
+                    + ChatColor.RED + " NÃO possui acesso à região '" + ChatColor.YELLOW + region.getName() + ChatColor.RED + "'.");
+        }
+    }
+
+    private void sendMembersHelp(CommandSender sender) {
+        sender.sendMessage(ChatColor.GOLD + "=== [ Comandos de Membros do FurGuard ] ===");
+        sender.sendMessage(ChatColor.YELLOW + "/guard members <região> list " + ChatColor.GRAY + "- Lista membros com acesso à região");
+        sender.sendMessage(ChatColor.YELLOW + "/guard members <região> add <jogador|@a> " + ChatColor.GRAY + "- Concede acesso (suporta @a para todos online)");
+        sender.sendMessage(ChatColor.YELLOW + "/guard members <região> remove <jogador|@a> " + ChatColor.GRAY + "- Revoga acesso de um jogador ou todos online (@a)");
+        sender.sendMessage(ChatColor.YELLOW + "/guard members <região> clear " + ChatColor.GRAY + "- Remove todos os membros da região");
+        sender.sendMessage(ChatColor.YELLOW + "/guard members <região> check <jogador> " + ChatColor.GRAY + "- Verifica se um jogador tem acesso");
+    }
+
     private void handleDelete(CommandSender sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage(ChatColor.RED + "Uso correto: /guard delete <nome>");
@@ -439,6 +739,32 @@ public class GuardCommand implements CommandExecutor, TabCompleter {
             String status = allowed ? ChatColor.GREEN + "ALLOW" : ChatColor.RED + "DENY";
             sender.sendMessage(ChatColor.DARK_GRAY + " - " + ChatColor.YELLOW + flag.getKey() + ": " + status);
         }
+
+        Set<UUID> members = region.getMembers();
+        sender.sendMessage(ChatColor.GRAY + "Membros com acesso (" + members.size() + "): "
+                + (members.isEmpty() ? ChatColor.DARK_GRAY + "Nenhum" : ChatColor.WHITE + formatMembersSummary(region)));
+    }
+
+    private String formatMembersSummary(GuardRegion region) {
+        Set<UUID> members = region.getMembers();
+        if (members.isEmpty()) return "Nenhum";
+        List<String> names = new ArrayList<>();
+        for (UUID u : members) {
+            String n = region.getMemberNames().get(u);
+            if (n != null) {
+                names.add(n);
+            } else {
+                Player p = Bukkit.getPlayer(u);
+                if (p != null) names.add(p.getName());
+                else names.add(u.toString().substring(0, 8));
+            }
+            if (names.size() >= 5) break;
+        }
+        String res = String.join(", ", names);
+        if (members.size() > 5) {
+            res += " (+" + (members.size() - 5) + " outros)";
+        }
+        return res;
     }
 
     private void handleReload(CommandSender sender) {
@@ -455,6 +781,7 @@ public class GuardCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " expand vert " + ChatColor.GRAY + "- Expande a seleção da camada -64 a 320");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " create <nome> [tipo] " + ChatColor.GRAY + "- Cria região (whitelist/blacklist)");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " region <nome> <tipo> " + ChatColor.GRAY + "- Altera o tipo da região");
+        sender.sendMessage(ChatColor.YELLOW + "/" + label + " members <nome> <add|remove|list> [jogador|@a] " + ChatColor.GRAY + "- Gerencia membros com acesso à região");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " flag <nome> <flag> <allow|deny> " + ChatColor.GRAY + "- Altera flags de proteção");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " message <nome> <texto> " + ChatColor.GRAY + "- Configura mensagem ao colidir");
         sender.sendMessage(ChatColor.YELLOW + "/" + label + " show <nome> " + ChatColor.GRAY + "- Exibe as bordas com partículas");
@@ -475,12 +802,75 @@ public class GuardCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subs = Arrays.asList(
                     "wand", "pos1", "pos2", "expand", "create", "setregion", "region",
-                    "type", "delete", "flag", "message", "show", "tp", "list", "info", "reload", "help"
+                    "type", "members", "member", "delete", "flag", "message", "show", "tp", "list", "info", "reload", "help"
             );
             return filterPrefix(subs, args[0]);
         }
 
         String sub = args[0].toLowerCase(Locale.ROOT);
+
+        if (sub.equals("members") || sub.equals("member")) {
+            List<String> actions = Arrays.asList("list", "add", "remove", "clear", "check");
+            List<String> regionNames = guardManager.getAllRegions().stream()
+                    .map(GuardRegion::getName)
+                    .collect(Collectors.toList());
+
+            if (args.length == 2) {
+                List<String> suggestions = new ArrayList<>(regionNames);
+                suggestions.addAll(actions);
+                return filterPrefix(suggestions, args[1]);
+            }
+
+            if (args.length == 3) {
+                if (actions.contains(args[1].toLowerCase(Locale.ROOT))) {
+                    // /guard members <action> <região>
+                    return filterPrefix(regionNames, args[2]);
+                } else {
+                    // /guard members <região> <action>
+                    return filterPrefix(actions, args[2]);
+                }
+            }
+
+            if (args.length == 4) {
+                String act = actions.contains(args[1].toLowerCase(Locale.ROOT))
+                        ? args[1].toLowerCase(Locale.ROOT)
+                        : args[2].toLowerCase(Locale.ROOT);
+                String regName = actions.contains(args[1].toLowerCase(Locale.ROOT))
+                        ? args[2].toLowerCase(Locale.ROOT)
+                        : args[1].toLowerCase(Locale.ROOT);
+
+                GuardRegion reg = guardManager.getRegion(regName);
+
+                if (act.equals("add")) {
+                    List<String> players = new ArrayList<>();
+                    players.add("@a");
+                    players.addAll(Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()));
+                    return filterPrefix(players, args[3]);
+                } else if (act.equals("remove")) {
+                    List<String> removeTargets = new ArrayList<>();
+                    removeTargets.add("@a");
+                    if (reg != null) {
+                        for (UUID u : reg.getMembers()) {
+                            String name = reg.getMemberNames().get(u);
+                            if (name != null) {
+                                removeTargets.add(name);
+                            } else {
+                                removeTargets.add(u.toString());
+                            }
+                        }
+                    }
+                    if (removeTargets.size() <= 1) {
+                        removeTargets.addAll(Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()));
+                    }
+                    return filterPrefix(removeTargets, args[3]);
+                } else if (act.equals("check")) {
+                    List<String> players = Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
+                    return filterPrefix(players, args[3]);
+                }
+            }
+
+            return Collections.emptyList();
+        }
 
         if (args.length == 2) {
             if (sub.equals("expand")) {

@@ -5,8 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.util.BoundingBox;
 
-import java.util.EnumMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Representa uma região protegida com limites cubóides (BoundingBox).
@@ -22,6 +21,8 @@ public class GuardRegion {
     private double maxZ;
     private GuardType type;
     private Map<GuardFlag, Boolean> flags;
+    private Set<UUID> members;
+    private Map<UUID, String> memberNames;
     private String customMessage;
     private String bypassPermission;
     private int priority;
@@ -31,6 +32,8 @@ public class GuardRegion {
 
     public GuardRegion() {
         this.flags = new EnumMap<>(GuardFlag.class);
+        this.members = new HashSet<>();
+        this.memberNames = new HashMap<>();
         this.createdAt = System.currentTimeMillis();
         this.priority = 0;
     }
@@ -193,6 +196,110 @@ public class GuardRegion {
 
     public void setFlags(Map<GuardFlag, Boolean> flags) {
         this.flags = flags;
+    }
+
+    public Set<UUID> getMembers() {
+        if (this.members == null) {
+            this.members = new HashSet<>();
+        }
+        return this.members;
+    }
+
+    public void setMembers(Set<UUID> members) {
+        this.members = members;
+    }
+
+    public Map<UUID, String> getMemberNames() {
+        if (this.memberNames == null) {
+            this.memberNames = new HashMap<>();
+        }
+        return this.memberNames;
+    }
+
+    public void setMemberNames(Map<UUID, String> memberNames) {
+        this.memberNames = memberNames;
+    }
+
+    /**
+     * Adiciona um jogador como membro desta região.
+     */
+    public boolean addMember(UUID uuid, String name) {
+        if (uuid == null) return false;
+        if (this.members == null) {
+            this.members = new HashSet<>();
+        }
+        if (this.memberNames == null) {
+            this.memberNames = new HashMap<>();
+        }
+        boolean added = this.members.add(uuid);
+        if (name != null && !name.trim().isEmpty()) {
+            this.memberNames.put(uuid, name.trim());
+        }
+        return added;
+    }
+
+    /**
+     * Remove um jogador por UUID da lista de membros desta região.
+     */
+    public boolean removeMember(UUID uuid) {
+        if (uuid == null || this.members == null) return false;
+        if (this.memberNames != null) {
+            this.memberNames.remove(uuid);
+        }
+        return this.members.remove(uuid);
+    }
+
+    /**
+     * Remove um jogador por nome (ignorando maiúsculas/minúsculas).
+     */
+    public boolean removeMember(String name) {
+        if (name == null || this.members == null) return false;
+        UUID found = null;
+        if (this.memberNames != null) {
+            for (Map.Entry<UUID, String> entry : this.memberNames.entrySet()) {
+                if (entry.getValue().equalsIgnoreCase(name.trim())) {
+                    found = entry.getKey();
+                    break;
+                }
+            }
+        }
+        if (found != null) {
+            return removeMember(found);
+        }
+        return false;
+    }
+
+    /**
+     * Verifica se o UUID é membro desta região.
+     */
+    public boolean isMember(UUID uuid) {
+        if (uuid == null || this.members == null) return false;
+        return this.members.contains(uuid);
+    }
+
+    /**
+     * Verifica se o nome do jogador é membro desta região.
+     */
+    public boolean isMember(String name) {
+        if (name == null || this.memberNames == null) return false;
+        for (String memberName : this.memberNames.values()) {
+            if (name.equalsIgnoreCase(memberName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Limpa todos os membros da região.
+     */
+    public void clearMembers() {
+        if (this.members != null) {
+            this.members.clear();
+        }
+        if (this.memberNames != null) {
+            this.memberNames.clear();
+        }
     }
 
     public String getCustomMessage() {

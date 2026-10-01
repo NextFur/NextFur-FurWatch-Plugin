@@ -267,6 +267,10 @@ public class GuardManager {
         if (player.hasPermission("furwatch.guard.bypass")) return true;
 
         if (region != null) {
+            // Membros da região possuem acesso permitido
+            if (region.isMember(player.getUniqueId()) || (player.getName() != null && region.isMember(player.getName()))) {
+                return true;
+            }
             if (region.getBypassPermission() != null && !region.getBypassPermission().isEmpty()) {
                 if (player.hasPermission(region.getBypassPermission())) {
                     return true;
@@ -277,6 +281,81 @@ public class GuardManager {
             }
         }
         return false;
+    }
+
+    /**
+     * Adiciona um membro à região especificada e salva assincronamente.
+     */
+    public boolean addMemberToRegion(String regionName, UUID uuid, String name) {
+        GuardRegion region = getRegion(regionName);
+        if (region == null) return false;
+        boolean added = region.addMember(uuid, name);
+        if (added) {
+            saveData(true);
+        }
+        return added;
+    }
+
+    /**
+     * Remove um membro por UUID da região especificada e salva assincronamente.
+     */
+    public boolean removeMemberFromRegion(String regionName, UUID uuid) {
+        GuardRegion region = getRegion(regionName);
+        if (region == null) return false;
+        boolean removed = region.removeMember(uuid);
+        if (removed) {
+            saveData(true);
+        }
+        return removed;
+    }
+
+    /**
+     * Adiciona todos os jogadores atualmente online como membros da região.
+     * Retorna a quantidade de jogadores que foram recém-adicionados.
+     */
+    public int addAllOnlineToRegion(String regionName) {
+        GuardRegion region = getRegion(regionName);
+        if (region == null) return 0;
+        int count = 0;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (region.addMember(player.getUniqueId(), player.getName())) {
+                count++;
+            }
+        }
+        if (count > 0) {
+            saveData(true);
+        }
+        return count;
+    }
+
+    /**
+     * Remove todos os jogadores atualmente online da lista de membros da região.
+     * Retorna a quantidade de jogadores removidos.
+     */
+    public int removeAllOnlineFromRegion(String regionName) {
+        GuardRegion region = getRegion(regionName);
+        if (region == null) return 0;
+        int count = 0;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (region.removeMember(player.getUniqueId())) {
+                count++;
+            }
+        }
+        if (count > 0) {
+            saveData(true);
+        }
+        return count;
+    }
+
+    /**
+     * Limpa todos os membros de uma região.
+     */
+    public boolean clearRegionMembers(String regionName) {
+        GuardRegion region = getRegion(regionName);
+        if (region == null) return false;
+        region.clearMembers();
+        saveData(true);
+        return true;
     }
 
     // Checagem de Movimento e Violações

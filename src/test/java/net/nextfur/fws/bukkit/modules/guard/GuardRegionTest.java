@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GuardRegionTest {
@@ -117,5 +119,103 @@ public class GuardRegionTest {
         assertFalse(deserialized.isFlagAllowed(GuardFlag.PVP));
         assertTrue(deserialized.contains(0.0, 64.0, 0.0));
         assertFalse(deserialized.contains(100.0, 64.0, 100.0));
+    }
+
+    @Test
+    public void testMemberManagement() {
+        GuardRegion region = new GuardRegion("spawn", "world", 0, 0, 0, 10, 10, 10, GuardType.BLACKLIST);
+        UUID uuid1 = UUID.randomUUID();
+        UUID uuid2 = UUID.randomUUID();
+
+        // Inicialmente sem membros
+        assertTrue(region.getMembers().isEmpty());
+        assertFalse(region.isMember(uuid1));
+        assertFalse(region.isMember("Steve"));
+
+        // Adiciona membro 1
+        assertTrue(region.addMember(uuid1, "Steve"));
+        assertTrue(region.isMember(uuid1));
+        assertTrue(region.isMember("Steve"));
+        assertTrue(region.isMember("steve")); // Case-insensitive
+        assertEquals("Steve", region.getMemberNames().get(uuid1));
+
+        // Adicionar mesmo UUID atualiza o nome e retorna false para novo elemento no set
+        assertFalse(region.addMember(uuid1, "SteveUpdated"));
+        assertEquals("SteveUpdated", region.getMemberNames().get(uuid1));
+
+        // Adiciona membro 2
+        assertTrue(region.addMember(uuid2, "Alex"));
+        assertEquals(2, region.getMembers().size());
+
+        // Remove por nome
+        assertTrue(region.removeMember("alex"));
+        assertFalse(region.isMember(uuid2));
+        assertFalse(region.isMember("Alex"));
+        assertEquals(1, region.getMembers().size());
+
+        // Remove por UUID
+        assertTrue(region.removeMember(uuid1));
+        assertFalse(region.isMember(uuid1));
+        assertTrue(region.getMembers().isEmpty());
+    }
+
+    @Test
+    public void testClearMembers() {
+        GuardRegion region = new GuardRegion("arena", "world", 0, 0, 0, 10, 10, 10, GuardType.BLACKLIST);
+        region.addMember(UUID.randomUUID(), "Player1");
+        region.addMember(UUID.randomUUID(), "Player2");
+        assertEquals(2, region.getMembers().size());
+
+        region.clearMembers();
+        assertTrue(region.getMembers().isEmpty());
+        assertTrue(region.getMemberNames().isEmpty());
+    }
+
+    @Test
+    public void testJsonSerializationWithMembers() {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        GuardRegion original = new GuardRegion("market", "world", 0, 0, 0, 50, 50, 50, GuardType.BLACKLIST);
+        UUID uuid = UUID.randomUUID();
+        original.addMember(uuid, "TraderBob");
+
+        String json = gson.toJson(original);
+        assertNotNull(json);
+        assertTrue(json.contains("TraderBob"));
+        assertTrue(json.contains(uuid.toString()));
+
+        GuardRegion deserialized = gson.fromJson(json, GuardRegion.class);
+        assertNotNull(deserialized);
+        assertTrue(deserialized.isMember(uuid));
+        assertTrue(deserialized.isMember("TraderBob"));
+        assertEquals("TraderBob", deserialized.getMemberNames().get(uuid));
+    }
+
+    @Test
+    public void testBackwardCompatibilityJsonWithoutMembers() {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String jsonWithoutMembers = "{\n" +
+                "  \"name\": \"old_region\",\n" +
+                "  \"worldName\": \"world\",\n" +
+                "  \"minX\": 0.0,\n" +
+                "  \"minY\": 0.0,\n" +
+                "  \"minZ\": 0.0,\n" +
+                "  \"maxX\": 10.0,\n" +
+                "  \"maxY\": 10.0,\n" +
+                "  \"maxZ\": 10.0,\n" +
+                "  \"type\": \"BLACKLIST\",\n" +
+                "  \"flags\": {}\n" +
+                "}";
+
+        GuardRegion deserialized = gson.fromJson(jsonWithoutMembers, GuardRegion.class);
+        assertNotNull(deserialized);
+        assertNotNull(deserialized.getMembers());
+        assertNotNull(deserialized.getMemberNames());
+        assertFalse(deserialized.isMember(UUID.randomUUID()));
+        assertFalse(deserialized.isMember("Anyone"));
+
+        UUID newUuid = UUID.randomUUID();
+        assertTrue(deserialized.addMember(newUuid, "NewPlayer"));
+        assertTrue(deserialized.isMember(newUuid));
+        assertTrue(deserialized.isMember("NewPlayer"));
     }
 }
